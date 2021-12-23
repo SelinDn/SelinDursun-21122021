@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv/config');
 
 const userRoutes = require('./routes/user');
+const sauceRoutes = require('./routes/sauce');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use('/api/auth', userRoutes);
+app.use('/api/sauces', sauceRoutes);
 
 // Connect to database
 mongoose.connect(process.env.DB_CONNECT,
