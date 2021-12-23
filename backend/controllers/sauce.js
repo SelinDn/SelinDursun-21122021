@@ -75,5 +75,35 @@ exports.deleteSauce = (req, res, next) => {
 
 // Ajout de likes/dislikes pour une sauce (CREATE)
 exports.likeOrDislikeSauce = (req, res, next) => {
-
+    // Quand le frontend renvoie like:1 (LIKER)
+    if (req.body.like === 1) {
+        Sauce.updateOne({ _id: req.params.id}, { $inc: { likes: +1 }, $push: { usersLiked: req.body.userId }})
+        .then(() => res.status(200).json({ message: 'Like pris en compte !'}))
+        .catch((error) => res.status(400).json({ error }));
+    }
+    // Quand le frontend renvoie like:-1 (DISLIKER)
+    else if (req.body.like === -1) {
+        Sauce.updateOne({ _id: req.params.id}, { $inc: { dislikes: +1 }, $push: { usersDisliked: req.body.userId }})
+        .then(() => res.status(200).json({ message: 'Dislike pris en compte !'}))
+        .catch((error) => res.status(400).json({ error }));
+    } 
+    // Quand le frontend renvoie like:0 (ANNULER)
+    else {
+        Sauce.findOne({ _id: req.params.id})
+        .then((sauce) => {
+            // Annuler le like
+            if (sauce.usersLiked.includes(req.body.userId)) {
+                Sauce.updateOne({ _id: req.params.id}, { $inc: { likes: -1 }, $pull: { usersLiked: req.body.userId }})
+                .then(() => res.status(200).json({ message: 'Avis déja pris en compte !'}))
+                .catch((error) => res.status(400).json({ error }));
+            } 
+            // Annuler le dislike
+            else if (sauce.usersDisliked.includes(req.body.userId)) {
+                Sauce.updateOne({ _id: req.params.id}, { $inc: { dislikes: -1 }, $pull: { usersDisliked: req.body.userId }})
+                .then(() => res.status(200).json({ message: 'Avis déja pris en compte !'}))
+                .catch((error) => res.status(400).json({ error }));
+            }
+        })
+        .catch((error) => res.status(404).json({ error }));
+    }
 };
