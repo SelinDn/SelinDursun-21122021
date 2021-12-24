@@ -32,11 +32,11 @@ exports.createSauce = (req, res, next) => {
 
 // Modification d'une sauce (UPDATE)
 exports.modifySauce = (req, res, next) => {
-    if (sauce.userId !== req.auth.userId) {
+   /* if (sauce.userId !== req.auth.userId) {
         return res.status(401).json({
             error: new Error('Requête non autorisée !')
         });
-    }
+    } */
     // Dans le cas de l'ajout d'une nouvelle image
     const sauceObject = req.file ? 
     {
@@ -58,11 +58,11 @@ exports.deleteSauce = (req, res, next) => {
                 error: new Error('Sauce non trouvé !')
             });
         }
-        if (sauce.userId !== req.auth.userId) {
+        /*if (sauce.userId !== req.auth.userId) {
             return res.status(401).json({
                 error: new Error('Requête non autorisée !')
             });
-        }
+        }*/
         const filename = sauce.imageUrl.split('/images/')[1];
         fs.unlink(`images/${filename}`, () => {
             Sauce.deleteOne({ _id: req.params.id})
