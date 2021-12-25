@@ -15,11 +15,17 @@ exports.getOneSauce = (req, res, next) => {
     .catch(error => res.status(404).json({ error}));
 };
 
+const regExp = /^[^ "<>?*()$][a-zA-Z0-9ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ ,.'-_]+$/;
+
 // Création d'une sauce (CREATE)
 exports.createSauce = (req, res, next) => {
     // Passage String => JS Object pour pouvoir créer la sauce
     const sauceObject = JSON.parse(req.body.sauce); 
     delete sauceObject._id;
+    // Contrôle des champs de saisies
+    if (!regExp.test(sauceObject.name) && !regExp.test(sauceObject.manufacturer) && !regExp.test(sauceObject.description) && !regExp.test(sauceObject.mainPepper) && !regExp.test(sauceObject.heat)) {
+        return res.status(500).json({ message : 'Les caractères spéciaux ne sont pas autorisés, veillez à bien remplir les champs'})
+    }
     const sauce = new Sauce({
         ...sauceObject,
         // Récupérer tout les segments d'URL de l'image
@@ -32,17 +38,16 @@ exports.createSauce = (req, res, next) => {
 
 // Modification d'une sauce (UPDATE)
 exports.modifySauce = (req, res, next) => {
-   /* if (sauce.userId !== req.auth.userId) {
-        return res.status(401).json({
-            error: new Error('Requête non autorisée !')
-        });
-    } */
-    // Dans le cas de l'ajout d'une nouvelle image
+   // Dans le cas de l'ajout d'une nouvelle image
     const sauceObject = req.file ? 
     {
         ...JSON.parse(req.body.sauce),
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body }; 
+    // Contrôle des champs de saisies
+    if (!regExp.test(sauceObject.name) && !regExp.test(sauceObject.manufacturer) && !regExp.test(sauceObject.description) && !regExp.test(sauceObject.mainPepper) && !regExp.test(sauceObject.heat)) {
+        return res.status(500).json({ message : 'Les caractères spéciaux ne sont pas autorisés, veillez à bien remplir les champs'})
+    }
     Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
     .then(() => res.status(200).json({message: 'Votre sauce a bien été modifiée !'}))
     .catch(error => res.status(400).json({ error}));

@@ -1,4 +1,7 @@
 const express = require('express');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const mongoSanitize = require('express-mongo-sanitize');
 const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv/config');
@@ -7,6 +10,10 @@ const userRoutes = require('./routes/user');
 const sauceRoutes = require('./routes/sauce');
 
 const app = express();
+
+app.use(helmet());
+app.use(morgan('combined'));
+app.use(mongoSanitize());
 
 app.use(express.json());
 
