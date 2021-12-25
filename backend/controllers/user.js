@@ -1,10 +1,21 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const cryptoJs = require('crypto-js');
 require('dotenv/config');
 const User = require('../models/User');
 
+// Mise en place de RegExp
+const emailRegexp = /^[^ <>?][a-zA-Z0-9ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ ,.'-_]+[@]{1}[^ <>?][a-zA-Z0-9ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ ,.'-_]+[.]{1}[a-z]{2,20}$/;
+const passwordRegexp = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,20}$/;
+
 // Inscription d'un nouvel utilisateur dans la db
 exports.signup = (req, res, next) => {
+    if (!emailRegexp.test(req.body.email) && !passwordRegexp.test(req.body.password)) {
+        return res.status(500).json({ message : 'Veuillez renseignez une adresse mail valide et un mot de passe valide !'})
+    };
+
+    // Chiffrement de l'email
+    const cryptoEmail = cryptoJs.HmacSHA256(req.body.email, process.env.CRYPTOJS_EMAIL_KEY).toString();
 
     // Création d'un hash du mot de passe avec un niveau de salage à 10
     bcrypt.hash(req.body.password, 10)
@@ -12,7 +23,7 @@ exports.signup = (req, res, next) => {
 
             // Création d'un nouvel utilisateur avec le mot de passe haché
             const user = new User({
-                email: req.body.email,
+                email: cryptoEmail,
                 password: hash,
             });
 
@@ -26,6 +37,9 @@ exports.signup = (req, res, next) => {
 
 // Connexion d'un utilisateur existant dans la db
 exports.login = (req, res, next) => {
+    if (!emailRegexp.test(req.body.email) && !passwordRegexp.test(req.body.password)) {
+        return res.status(500).json({ message : 'Veuillez renseignez une adresse mail valide et un mot de passe valide !'})
+    };
 
     // Récupération de l'adresse mail et comparaison de l'adresse d'inscription à l'adresse saisie
     User.findOne({ email: req.body.email})
