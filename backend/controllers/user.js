@@ -40,9 +40,9 @@ exports.login = (req, res, next) => {
     if (!emailRegexp.test(req.body.email) && !passwordRegexp.test(req.body.password)) {
         return res.status(500).json({ message : 'Veuillez renseignez une adresse mail valide et un mot de passe valide !'})
     };
-
+    const cryptoEmail = cryptoJs.HmacSHA256(req.body.email, process.env.CRYPTOJS_EMAIL_KEY).toString();
     // Récupération de l'adresse mail et comparaison de l'adresse d'inscription à l'adresse saisie
-    User.findOne({ email: req.body.email})
+    User.findOne({ email: cryptoEmail})
         .then(user => {
 
             // Dans le cas d'un utilisateur non trouvé
