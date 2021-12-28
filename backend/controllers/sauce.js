@@ -38,36 +38,42 @@ exports.createSauce = (req, res, next) => {
 
 // Modification d'une sauce (UPDATE)
 exports.modifySauce = (req, res, next) => {
-   // Dans le cas de l'ajout d'une nouvelle image
-    const sauceObject = req.file ? 
-    {
-        ...JSON.parse(req.body.sauce),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-    } : { ...req.body }; 
-    // Contrôle des champs de saisies
-    if (!regExp.test(sauceObject.name) && !regExp.test(sauceObject.manufacturer) && !regExp.test(sauceObject.description) && !regExp.test(sauceObject.mainPepper) && !regExp.test(sauceObject.heat)) {
-        return res.status(500).json({ message : 'Les caractères spéciaux ne sont pas autorisés, veillez à bien remplir les champs'})
-    }
-    Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
-    .then(() => res.status(200).json({message: 'Votre sauce a bien été modifiée !'}))
-    .catch(error => res.status(400).json({ error}));
+    // Contrôle de l'authentification
+    Sauce.findOne({_id: req.params.id})
+    .then((sauce) => {
+        if (sauce.userId !== req.auth.userId) {
+            return res.status(403).json({
+                error: new Error('Requête non autorisée !')
+            }); 
+        }
+        // Dans le cas de l'ajout d'une nouvelle image
+        const sauceObject = req.file ? 
+        {
+            ...JSON.parse(req.body.sauce),
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+        } : { ...req.body }; 
+        // Contrôle des champs de saisies
+        if (!regExp.test(sauceObject.name) && !regExp.test(sauceObject.manufacturer) && !regExp.test(sauceObject.description) && !regExp.test(sauceObject.mainPepper) && !regExp.test(sauceObject.heat)) {
+            return res.status(500).json({ message : 'Les caractères spéciaux ne sont pas autorisés, veillez à bien remplir les champs'})
+        }
+        Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
+        .then(() => res.status(200).json({message: 'Votre sauce a bien été modifiée !'}))
+        .catch(error => res.status(400).json({ error}));
+    })
+    .catch(error => res.status(500).json({ error}));
 };
 
 // Suppression d'une sauce (DELETE)
 exports.deleteSauce = (req, res, next) => {
-    // Chercher l'image afin de la supprimer aussi du dossier images
+    // Contrôle de l'authentification
     Sauce.findOne({_id: req.params.id})
     .then(sauce => {
-        if (!sauce) {
-            return res.status(404).json({
-                error: new Error('Sauce non trouvé !')
-            });
-        }
-        /*if (sauce.userId !== req.auth.userId) {
-            return res.status(401).json({
+        if (sauce.userId !== req.auth.userId) {
+            return res.status(403).json({
                 error: new Error('Requête non autorisée !')
             });
-        }*/
+        }
+        // Chercher l'image afin de la supprimer aussi du dossier images et de la db
         const filename = sauce.imageUrl.split('/images/')[1];
         fs.unlink(`images/${filename}`, () => {
             Sauce.deleteOne({ _id: req.params.id})
